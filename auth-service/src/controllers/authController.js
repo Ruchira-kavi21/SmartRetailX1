@@ -175,9 +175,16 @@ const getProfile = async (req, res) => {
         });
     }
 };
+const adminTest = async (req, res) => {
+    return res.status(200).json({
+        success: true,
+        message: "Welcome Admin. You have access to this resource."
+    });
+};
 
 module.exports = {
     register,
     login,
-    getProfile
+    getProfile,
+    adminTest
 };
