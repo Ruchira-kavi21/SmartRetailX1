@@ -61,7 +61,123 @@ const register = async (req, res) => {
         });
     }
 };
+const jwt = require("jsonwebtoken");
+
+const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Validate required fields
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required"
+            });
+        }
+
+        // Find user
+        const user = await prisma.user.findUnique({
+            where: {
+                email
+            }
+        });
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        // Compare password with stored hash
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.passwordHash
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        // Generate JWT
+        const token = jwt.sign(
+            {
+                userId: user.id,
+                email: user.email,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1h"
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            data: {
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Login error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+const getProfile = async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: req.user.userId
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: user
+        });
+
+    } catch (error) {
+        console.error("Profile error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
 
 module.exports = {
-    register
+    register,
+    login,
+    getProfile
 };
