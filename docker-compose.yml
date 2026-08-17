@@ -48,5 +48,23 @@ services:
       - "5002:5002"
     depends_on:
       - mysql
+
+  order-service:
+    build:
+      context: ./order-service
+    container_name: smartretailx-order-service
+    restart: unless-stopped
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+      MYSQL_DATABASE: order_db
+      DATABASE_URL: mysql://root:rootpassword@mysql:3306/order_db
+      PORT: 5003
+    ports:
+      - "5003:5003"
+    depends_on:
+      - mysql
 volumes:
   mysql_data:
