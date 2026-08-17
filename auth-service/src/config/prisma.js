@@ -2,12 +2,13 @@ const { PrismaClient } = require("@prisma/client");
 const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
 
 const adapter = new PrismaMariaDb({
-    host: "localhost",
-    port: 3306,
-    user: "root",
+    host: process.env.MYSQL_HOST || "mysql",
+    port: Number(process.env.MYSQL_PORT) || 3306,
+    user: process.env.MYSQL_USER || "root",
     password: process.env.MYSQL_PASSWORD,
-    database: "auth_db",
-    connectionLimit: 5
+    database: process.env.MYSQL_DATABASE || "auth_db",
+    connectionLimit: 5,
+    allowPublicKeyRetrieval: true
 });
 
 const prisma = new PrismaClient({
