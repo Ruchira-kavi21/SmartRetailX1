@@ -1,0 +1,62 @@
+{
+  "family": "smartretailx-order-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::134014260827:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "order-service",
+      "image": "134014260827.dkr.ecr.ap-southeast-1.amazonaws.com/smartretailx/order-service:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5003,
+          "hostPort": 5003,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "5003"
+        },
+        {
+          "name": "MYSQL_HOST",
+          "value": "smartretailx-mysql-new.c1ikaaio4yoz.ap-southeast-1.rds.amazonaws.com"
+        },
+        {
+          "name": "MYSQL_PORT",
+          "value": "3306"
+        },
+        {
+          "name": "MYSQL_USER",
+          "value": "root"
+        },
+        {
+          "name": "MYSQL_PASSWORD",
+          "value": "rootpassword"
+        },
+        {
+          "name": "MYSQL_DATABASE",
+          "value": "order_db"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "mysql://root:rootpassword@smartretailx-mysql-new.c1ikaaio4yoz.ap-southeast-1.rds.amazonaws.com:3306/order_db"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/smartretailx/order-service",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

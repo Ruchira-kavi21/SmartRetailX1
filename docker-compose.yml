@@ -11,7 +11,7 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-
+      
   auth-service:
     build:
       context: ./auth-service
@@ -43,6 +43,7 @@ services:
       MYSQL_PASSWORD: rootpassword
       MYSQL_DATABASE: product_db
       DATABASE_URL: mysql://root:rootpassword@mysql:3306/product_db
+      JWT_SECRET: change-this-development-secret
       PORT: 5002
     ports:
       - "5002:5002"
@@ -61,11 +62,14 @@ services:
       MYSQL_PASSWORD: rootpassword
       MYSQL_DATABASE: order_db
       DATABASE_URL: mysql://root:rootpassword@mysql:3306/order_db
+      JWT_SECRET: change-this-development-secret
+      INVENTORY_SERVICE_URL: http://inventory-service:5004
       PORT: 5003
     ports:
       - "5003:5003"
     depends_on:
       - mysql
+      - inventory-service   
 
   inventory-service:
     build:
@@ -79,6 +83,7 @@ services:
       MYSQL_PASSWORD: rootpassword
       MYSQL_DATABASE: inventory_db
       DATABASE_URL: mysql://root:rootpassword@mysql:3306/inventory_db
+      JWT_SECRET: change-this-development-secret
       PORT: 5004
     ports:
       - "5004:5004"

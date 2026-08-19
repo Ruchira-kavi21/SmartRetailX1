@@ -2,12 +2,46 @@ const prisma = require("../config/prisma");
 
 const createOrder = async (req, res) => {
   try {
-    const { userId, productId, quantity, totalAmount } = req.body;
+    const { productId, quantity, totalAmount } = req.body;
 
-    if (!userId || !productId || !quantity || totalAmount === undefined) {
+    // The authenticated user's ID comes from the JWT.
+    // Do not trust userId supplied by the client.
+    const userId = req.user.userId;
+
+    if (!productId || !quantity || totalAmount === undefined) {
       return res.status(400).json({
         success: false,
-        message: "userId, productId, quantity and totalAmount are required",
+        message: "productId, quantity and totalAmount are required",
+      });
+    }
+
+    // Reserve stock before creating the order
+    const inventoryServiceUrl =
+      process.env.INVENTORY_SERVICE_URL || "http://localhost:5004";
+
+    const authHeader = req.headers.authorization;
+
+    const inventoryResponse = await fetch(
+      `${inventoryServiceUrl}/api/v1/inventory/${productId}/reserve`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({
+          quantity,
+        }),
+      }
+    );
+
+    const inventoryData = await inventoryResponse.json();
+
+    if (!inventoryResponse.ok) {
+      return res.status(inventoryResponse.status).json({
+        success: false,
+        message: "Unable to reserve inventory",
+        inventory: inventoryData,
       });
     }
 
@@ -37,7 +71,15 @@ const createOrder = async (req, res) => {
 
 const getOrders = async (req, res) => {
   try {
+    const where =
+      req.user.role === "ADMIN"
+        ? {}
+        : {
+            userId: req.user.userId,
+          };
+
     const orders = await prisma.order.findMany({
+      where,
       orderBy: {
         createdAt: "desc",
       },
@@ -72,6 +114,17 @@ const getOrderById = async (req, res) => {
       });
     }
 
+    // Customers can only access their own orders.
+    if (
+      req.user.role !== "ADMIN" &&
+      order.userId !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You can only access your own orders.",
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: order,
@@ -91,31 +144,80 @@ const updateOrderStatus = async (req, res) => {
     const id = Number(req.params.id);
     const { status } = req.body;
 
-    const validStatuses = ["PENDING", "CONFIRMED", "CANCELLED"];
+    // Only administrators can change order status.
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied. Only administrators can update order status.",
+      });
+    }
 
-    if (!validStatuses.includes(status)) {
+    if (!Number.isInteger(id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid order status",
+        message: "Invalid order ID",
+      });
+    }
+
+    // Only CONFIRMED and CANCELLED are valid status changes.
+    if (!["CONFIRMED", "CANCELLED"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid status. Order can only be confirmed or cancelled.",
+      });
+    }
+
+    const existingOrder = await prisma.order.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Only PENDING orders can be confirmed or cancelled.
+    if (existingOrder.status !== "PENDING") {
+      return res.status(400).json({
+        success: false,
+        message:
+          `Order is already ${existingOrder.status} and cannot be changed.`,
       });
     }
 
     const order = await prisma.order.update({
-      where: { id },
-      data: { status },
+      where: {
+        id,
+      },
+      data: {
+        status,
+      },
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Order status updated successfully",
+      message: `Order ${status.toLowerCase()} successfully`,
       data: order,
     });
   } catch (error) {
-    console.error("Update order error:", error);
+    console.error("Update order status error:", error);
 
-    res.status(500).json({
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: "Failed to update order",
+      message: "Failed to update order status",
     });
   }
 };

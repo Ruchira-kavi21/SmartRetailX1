@@ -3,7 +3,10 @@ const {
     register,
     login,
     getProfile,
-    adminTest
+    adminTest,
+    getUsers,
+    updateUserRole,
+    deleteUser
 } = require("../controllers/authController");
 
 const {authenticateToken} = require("../middleware/authMiddleware");
@@ -129,6 +132,26 @@ router.get(
     authenticateToken,
     authorizeRoles("ADMIN"),
     adminTest
+);
+router.get(
+    "/users",
+    authenticateToken,
+    authorizeRoles("ADMIN"),
+    getUsers
+);
+
+router.patch(
+    "/users/:id/role",
+    authenticateToken,
+    authorizeRoles("ADMIN"),
+    updateUserRole
+);
+
+router.delete(
+    "/users/:id",
+    authenticateToken,
+    authorizeRoles("ADMIN"),
+    deleteUser
 );
 
 module.exports = router;

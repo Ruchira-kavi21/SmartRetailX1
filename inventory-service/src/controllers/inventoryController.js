@@ -232,6 +232,52 @@ const reserveStock = async (req, res) => {
     });
   }
 };
+const deleteInventory = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid inventory id",
+      });
+    }
+
+    const inventory = await prisma.inventory.findUnique({
+      where: { id },
+    });
+
+    if (!inventory) {
+      return res.status(404).json({
+        success: false,
+        message: "Inventory not found",
+      });
+    }
+
+    if (inventory.reserved > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete inventory with reserved stock",
+      });
+    }
+
+    await prisma.inventory.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Inventory deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete inventory error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete inventory",
+    });
+  }
+};
 
 module.exports = {
   createInventory,
@@ -239,4 +285,5 @@ module.exports = {
   getInventoryByProduct,
   updateStock,
   reserveStock,
+  deleteInventory,
 };

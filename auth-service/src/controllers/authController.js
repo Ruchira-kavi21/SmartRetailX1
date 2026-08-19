@@ -181,10 +181,169 @@ const adminTest = async (req, res) => {
         message: "Welcome Admin. You have access to this resource."
     });
 };
+const getUsers = async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: users
+        });
+
+    } catch (error) {
+        console.error("Get users error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve users"
+        });
+    }
+};
+
+
+const updateUserRole = async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { role } = req.body;
+
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID"
+            });
+        }
+
+        if (!["ADMIN", "CUSTOMER"].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role"
+            });
+        }
+
+        if (id === req.user.userId) {
+            return res.status(400).json({
+                success: false,
+                message: "You cannot change your own role"
+            });
+        }
+
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                id
+            }
+        });
+
+        if (!existingUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const user = await prisma.user.update({
+            where: {
+                id
+            },
+            data: {
+                role
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "User role updated successfully",
+            data: user
+        });
+
+    } catch (error) {
+        console.error("Update user role error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update user role"
+        });
+    }
+};
+
+
+const deleteUser = async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID"
+            });
+        }
+
+        if (id === req.user.userId) {
+            return res.status(400).json({
+                success: false,
+                message: "You cannot delete your own account"
+            });
+        }
+
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                id
+            }
+        });
+
+        if (!existingUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        await prisma.user.delete({
+            where: {
+                id
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "User deleted successfully"
+        });
+
+    } catch (error) {
+        console.error("Delete user error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete user"
+        });
+    }
+};
 
 module.exports = {
     register,
     login,
     getProfile,
-    adminTest
+    adminTest,
+    getUsers,
+    updateUserRole,
+    deleteUser
 };

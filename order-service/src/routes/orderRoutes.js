@@ -7,11 +7,20 @@ const {
   updateOrderStatus,
 } = require("../controllers/orderController");
 
+const { authenticateToken } = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
-router.post("/", createOrder);
-router.get("/", getOrders);
-router.get("/:id", getOrderById);
-router.patch("/:id/status", updateOrderStatus);
+router.post("/", authenticateToken, createOrder);
+
+router.get("/", authenticateToken, getOrders);
+
+router.get("/:id", authenticateToken, getOrderById);
+
+router.patch(
+  "/:id/status",
+  authenticateToken,
+  updateOrderStatus
+);
 
 module.exports = router;

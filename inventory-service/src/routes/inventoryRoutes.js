@@ -6,14 +6,53 @@ const {
   getInventoryByProduct,
   updateStock,
   reserveStock,
+  deleteInventory,
 } = require("../controllers/inventoryController");
+
+const {
+  authenticateToken,
+} = require("../middleware/authMiddleware");
+
+const {
+  authorizeRoles,
+} = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-router.post("/", createInventory);
-router.get("/", getAllInventory);
-router.get("/:productId", getInventoryByProduct);
-router.patch("/:productId/stock", updateStock);
-router.patch("/:productId/reserve", reserveStock);
+// Authenticated users can view inventory
+router.get(
+  "/",
+  authenticateToken,
+  getAllInventory
+);
+
+router.get(
+  "/:productId",
+  authenticateToken,
+  getInventoryByProduct
+);
+
+// ADMIN inventory management
+router.post(
+  "/",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  createInventory
+);
+
+router.patch(
+  "/:productId/stock",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  updateStock
+);
+
+router.delete("/:id", deleteInventory);
+
+// Used by the Order Service
+router.patch(
+  "/:productId/reserve",
+  reserveStock
+);
 
 module.exports = router;
