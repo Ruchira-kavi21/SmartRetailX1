@@ -187,160 +187,264 @@ const Orders = () => {
           </div>
         )}
 
-      {/* Orders Table */}
+      {/* Orders List */}
       {!loading &&
         !error &&
         orders.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Order ID
-                    </th>
-
-                    {isAdmin && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        User ID
-                      </th>
-                    )}
-
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Product ID
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Quantity
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Total
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Status
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Date
-                    </th>
-
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-slate-200">
-                  {orders.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="transition hover:bg-slate-50"
-                    >
-                      {/* Order ID */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-900">
+          <div className="space-y-6">
+            {/* Mobile View: Cards */}
+            <div className="grid gap-4 md:hidden">
+              {orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Order ID
+                      </span>
+                      <p className="text-sm font-bold text-slate-900">
                         #{order.id}
-                      </td>
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusClass(
+                        order.status
+                      )}`}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
 
-                      {/* User ID - Admin only */}
-                      {isAdmin && (
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <div className="grid grid-cols-2 gap-4 border-y border-slate-100 py-3 text-sm">
+                    {isAdmin && (
+                      <div>
+                        <span className="block text-xs font-medium uppercase tracking-wider text-slate-400">
+                          User ID
+                        </span>
+                        <span className="text-slate-700">
                           #{order.userId}
-                        </td>
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="block text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Product ID
+                      </span>
+                      <span className="text-slate-700">
+                        #{order.productId}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Quantity
+                      </span>
+                      <span className="font-medium text-slate-700">
+                        {order.quantity}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Total Amount
+                      </span>
+                      <span className="font-bold text-slate-950">
+                        LKR {Number(order.totalAmount).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-xs text-slate-500">
+                      {formatDate(order.createdAt)}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/orders/${order.id}`}
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                      >
+                        View Details
+                      </Link>
+
+                      {isAdmin && order.status === "PENDING" && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={updatingOrderId === order.id}
+                            onClick={() => handleConfirm(order.id)}
+                            className="rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {updatingOrderId === order.id ? "..." : "Confirm"}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={updatingOrderId === order.id}
+                            onClick={() => handleCancel(order.id)}
+                            className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View: Tabular Table */}
+            <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Order ID
+                      </th>
+
+                      {isAdmin && (
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          User ID
+                        </th>
                       )}
 
-                      {/* Product ID */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
-                        #{order.productId}
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Product ID
+                      </th>
 
-                      {/* Quantity */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
-                        {order.quantity}
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Quantity
+                      </th>
 
-                      {/* Total */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
-                        LKR{" "}
-                        {Number(
-                          order.totalAmount
-                        ).toLocaleString()}
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Total
+                      </th>
 
-                      {/* Status */}
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                      </th>
 
-                      {/* Date */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                        {formatDate(order.createdAt)}
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Date
+                      </th>
 
-                      {/* Actions */}
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="flex items-center justify-end gap-3">
-                          <Link
-                            to={`/orders/${order.id}`}
-                            className="font-medium text-blue-600 transition hover:text-blue-700"
-                          >
-                            View Details
-                          </Link>
-
-                          {/* Admin Order Controls */}
-                          {isAdmin &&
-                            order.status ===
-                              "PENDING" && (
-                              <>
-                                <button
-                                  type="button"
-                                  disabled={
-                                    updatingOrderId ===
-                                    order.id
-                                  }
-                                  onClick={() =>
-                                    handleConfirm(
-                                      order.id
-                                    )
-                                  }
-                                  className="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {updatingOrderId ===
-                                  order.id
-                                    ? "Updating..."
-                                    : "Confirm"}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  disabled={
-                                    updatingOrderId ===
-                                    order.id
-                                  }
-                                  onClick={() =>
-                                    handleCancel(
-                                      order.id
-                                    )
-                                  }
-                                  className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            )}
-                        </div>
-                      </td>
+                      <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Action
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-200">
+                    {orders.map((order) => (
+                      <tr
+                        key={order.id}
+                        className="transition hover:bg-slate-50"
+                      >
+                        {/* Order ID */}
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-900">
+                          #{order.id}
+                        </td>
+
+                        {/* User ID - Admin only */}
+                        {isAdmin && (
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                            #{order.userId}
+                          </td>
+                        )}
+
+                        {/* Product ID */}
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                          #{order.productId}
+                        </td>
+
+                        {/* Quantity */}
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                          {order.quantity}
+                        </td>
+
+                        {/* Total */}
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                          LKR{" "}
+                          {Number(
+                            order.totalAmount
+                          ).toLocaleString()}
+                        </td>
+
+                        {/* Status */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
+                              order.status
+                            )}`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+
+                        {/* Date */}
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                          {formatDate(order.createdAt)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center justify-end gap-3">
+                            <Link
+                              to={`/orders/${order.id}`}
+                              className="font-medium text-blue-600 transition hover:text-blue-700"
+                            >
+                              View Details
+                            </Link>
+
+                            {/* Admin Order Controls */}
+                            {isAdmin &&
+                              order.status ===
+                                "PENDING" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      updatingOrderId ===
+                                      order.id
+                                    }
+                                    onClick={() =>
+                                      handleConfirm(
+                                        order.id
+                                      )
+                                    }
+                                    className="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {updatingOrderId ===
+                                    order.id
+                                      ? "Updating..."
+                                      : "Confirm"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      updatingOrderId ===
+                                      order.id
+                                    }
+                                    onClick={() =>
+                                      handleCancel(
+                                        order.id
+                                      )
+                                    }
+                                    className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

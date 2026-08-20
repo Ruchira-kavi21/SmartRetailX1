@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { getProductById } from "../services/productService";
-import { getInventory } from "../services/inventoryService";
+import { getInventoryByProduct } from "../services/inventoryService";
 import { createOrder } from "../services/orderService";
 
 const ProductDetails = () => {
@@ -27,21 +27,17 @@ const ProductDetails = () => {
         setLoading(true);
         setError("");
 
-        const [productResponse, inventoryResponse] =
-          await Promise.all([
-            getProductById(id),
-            getInventory(),
-          ]);
-
+        const productResponse = await getProductById(id);
         setProduct(productResponse.data);
 
-        const inventoryRecords = inventoryResponse.data || [];
-
-        const matchingInventory = inventoryRecords.find(
-          (item) => Number(item.productId) === Number(id)
-        );
-
-        setInventoryItem(matchingInventory || null);
+        // Fetch inventory separately to ensure product details still load if inventory service fails
+        try {
+          const inventoryResponse = await getInventoryByProduct(id);
+          setInventoryItem(inventoryResponse.data || null);
+        } catch (inventoryError) {
+          console.error("Failed to load inventory:", inventoryError);
+          // Don't throw here so product details still display
+        }
       } catch (error) {
         console.error("Failed to load product:", error);
 

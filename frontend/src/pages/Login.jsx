@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { login } from "../services/authService";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,31 +18,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:5001/api/v1/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Login failed");
-      }
-
-      const { token, user } = result.data;
-
-      // Store authentication information
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      await login(email, password);
 
       // Redirect after successful login
       navigate("/dashboard");

@@ -3,7 +3,7 @@ const prisma = require("../config/prisma");
 
 const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, role } = req.body;
 
         // Validate required fields
         if (!name || !email || !password) {
@@ -29,13 +29,15 @@ const register = async (req, res) => {
 
         // Hash password
         const passwordHash = await bcrypt.hash(password, 12);
+        const userRole = role === "ADMIN" ? "ADMIN" : "CUSTOMER";
 
         // Create user
         const user = await prisma.user.create({
             data: {
                 name,
                 email,
-                passwordHash
+                passwordHash,
+                role: userRole
             },
             select: {
                 id: true,

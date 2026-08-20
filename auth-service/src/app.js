@@ -8,7 +8,7 @@ const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // Middleware
 app.use(cors());

@@ -6,7 +6,7 @@ const inventoryRoutes = require("./routes/inventoryRoutes");
 const { swaggerUi, swaggerDocument } = require("./swagger");
 const app = express();
 
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors());
 app.use(express.json());
 
